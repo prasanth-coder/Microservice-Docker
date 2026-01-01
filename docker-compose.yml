@@ -1,0 +1,44 @@
+services:
+  mongodb:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  auth:
+    build: ./backend/auth-service
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongodb:27017/authdb
+      JWT_SECRET: dev_secret
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+
+  todos:
+    build: ./backend/todo-service
+    environment:
+      PORT: 4001
+      MONGO_URI: mongodb://mongodb:27017/tododb
+      JWT_SECRET: dev_secret
+    ports:
+      - "4001:4001"
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_AUTH_API: http://localhost:4000
+        VITE_TODO_API: http://localhost:4001
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth
+      - todos
+
+volumes:
+  mongo_data:
